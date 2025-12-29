@@ -1,3 +1,5 @@
+import { fetchPosts } from "../services/api";
+
 const USERS_KEY = "users";
 const BLOGS_KEY = "blogs";
 const CURRENT_USER = "currentUser";
@@ -7,38 +9,6 @@ export const getUsers = () =>
 
 export const saveUsers = (users) =>
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
-
-export const getBlogs = () =>
-  JSON.parse(localStorage.getItem(BLOGS_KEY)) || [];
-
-export const saveBlogs = (blogs) =>
-  localStorage.setItem(BLOGS_KEY, JSON.stringify(blogs));
-
-export const getCurrentUser = () =>
-  JSON.parse(localStorage.getItem(CURRENT_USER));
-
-export const setCurrentUser = (user) =>
-  localStorage.setItem(CURRENT_USER, JSON.stringify(user));
-
-export const logout = () =>
-  localStorage.removeItem(CURRENT_USER);
-
-export const addBlog = (blog) => {
-  const blogs = getBlogs();
-  saveBlogs([...blogs, blog]);
-};
-
-export const updateBlog = (updatedBlog) => {
-  const blogs = getBlogs().map(b =>
-    b.id === updatedBlog.id ? updatedBlog : b
-  );
-  saveBlogs(blogs);
-};
-
-export const deleteBlog = (id) => {
-  const blogs = getBlogs().filter(b => b.id !== id);
-  saveBlogs(blogs);
-};
 
 export const addUser = (user) => {
   const users = getUsers();
@@ -53,18 +23,63 @@ export const updateUser = (updatedUser) => {
 };
 
 export const deleteUser = (id) => {
-  // 1️⃣ Remove user
   const users = getUsers().filter(u => u.id !== id);
   saveUsers(users);
 
-  // 2️⃣ Remove blogs created by that user
-  const blogs = getBlogs().filter(b => b.userId !== id);
-  localStorage.setItem("blogs", JSON.stringify(blogs));
+  // remove blogs created by this user
+  const blogs = JSON.parse(localStorage.getItem(BLOGS_KEY)) || [];
+  const filteredBlogs = blogs.filter(b => b.userId !== id);
+  localStorage.setItem(BLOGS_KEY, JSON.stringify(filteredBlogs));
 };
+
+export const getBlogs = async () => {
+  const storedBlogs = JSON.parse(localStorage.getItem(BLOGS_KEY));
+
+  if (storedBlogs && storedBlogs.length > 0) {
+    return storedBlogs;
+  }
+
+  // Fetch from API
+  const apiBlogs = await fetchPosts();
+
+  localStorage.setItem(BLOGS_KEY, JSON.stringify(apiBlogs));
+  return apiBlogs;
+};
+
+export const saveBlogs = (blogs) =>
+  localStorage.setItem(BLOGS_KEY, JSON.stringify(blogs));
+
+export const addBlog = (blog) => {
+  const blogs = JSON.parse(localStorage.getItem(BLOGS_KEY)) || [];
+  saveBlogs([...blogs, blog]);
+};
+
+export const updateBlog = (updatedBlog) => {
+  const blogs = (JSON.parse(localStorage.getItem(BLOGS_KEY)) || []).map(b =>
+    b.id === updatedBlog.id ? updatedBlog : b
+  );
+  saveBlogs(blogs);
+};
+
+export const deleteBlog = (id) => {
+  const blogs = (JSON.parse(localStorage.getItem(BLOGS_KEY)) || []).filter(
+    b => b.id !== id
+  );
+  saveBlogs(blogs);
+};
+
+export const getCurrentUser = () =>
+  JSON.parse(localStorage.getItem(CURRENT_USER));
+
+export const setCurrentUser = (user) =>
+  localStorage.setItem(CURRENT_USER, JSON.stringify(user));
+
+export const logout = () =>
+  localStorage.removeItem(CURRENT_USER);
 
 export const cleanupOrphanBlogs = () => {
   const users = getUsers();
-  const blogs = getBlogs();
+  const blogs = JSON.parse(localStorage.getItem(BLOGS_KEY)) || [];
 
   const validUserIds = users.map(u => u.id);
 
@@ -72,8 +87,5 @@ export const cleanupOrphanBlogs = () => {
     validUserIds.includes(b.userId)
   );
 
-  localStorage.setItem("blogs", JSON.stringify(cleanedBlogs));
+  localStorage.setItem(BLOGS_KEY, JSON.stringify(cleanedBlogs));
 };
-
-
-
