@@ -74,3 +74,17 @@ export const seedBlogsFromAPI = async () => {
   const apiBlogs = await fetchPosts();
   localStorage.setItem(BLOGS_KEY, JSON.stringify(apiBlogs));
 };
+
+export const cleanupOrphanBlogs = () => {
+  const users = getUsers();
+  const blogs = getBlogs();
+
+  const validUserIds = users.map(u => u.id);
+
+  const cleanedBlogs = blogs.filter(b =>
+    validUserIds.includes(b.userId)
+  );
+
+  saveBlogs(cleanedBlogs);
+};
+
