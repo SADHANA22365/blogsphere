@@ -12,9 +12,10 @@ export default function EditBlog() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  const blog = getBlogs().find(b => b.id === Number(id));
+  const blog = getBlogs().find(
+    b => String(b.id) === String(id)
+  );
 
-  // Safety check
   if (!blog) {
     return (
       <div className="text-red-600 font-semibold">
@@ -23,7 +24,6 @@ export default function EditBlog() {
     );
   }
 
-  // Authorization check
   if (user.role === "user" && blog.userId !== user.id) {
     return (
       <div className="text-red-600 font-semibold">
@@ -32,7 +32,6 @@ export default function EditBlog() {
     );
   }
 
-  // ✅ Initialize state ONCE
   const [title, setTitle] = useState(blog.title);
   const [body, setBody] = useState(blog.body);
 
@@ -48,14 +47,16 @@ export default function EditBlog() {
     queryClient.invalidateQueries(["blogs"]);
 
     navigate(
-      user.role === "admin" ? "/admin/blogs" : "/user/my-blogs"
+      user.role === "admin"
+        ? "/admin/blogs"
+        : "/user/my-blogs"
     );
   };
 
   return (
     <form
-      className="bg-white p-6 shadow space-y-4 max-w-xl"
       onSubmit={handleUpdate}
+      className="bg-white p-6 shadow space-y-4 max-w-xl"
     >
       <h2 className="text-xl font-bold">Edit Blog</h2>
 
@@ -67,7 +68,7 @@ export default function EditBlog() {
 
       <textarea
         className="border p-2 rounded w-full"
-        rows="5"
+        rows="6"
         value={body}
         onChange={e => setBody(e.target.value)}
         required
